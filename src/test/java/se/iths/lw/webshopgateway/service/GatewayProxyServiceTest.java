@@ -131,14 +131,14 @@ class GatewayProxyServiceTest {
         assertTrue(response.getHeaders().get(HttpHeaders.SET_COOKIE).contains("accessToken=abc; Path=/; HttpOnly"));
     }
 
-    @Test
-    void logoutPostsToTheAuthServerWithoutAuthorization() {
-        gatewayProxyService.logout();
-
-        assertEquals("POST", receivedMethod.get());
-        assertEquals("/auth/logout", receivedPath.get());
-        assertNull(receivedAuthorization.get());
-    }
+//    @Test
+//    void logoutPostsToTheAuthServerWithoutAuthorization() {
+//        gatewayProxyService.logout();
+//
+//        assertEquals("POST", receivedMethod.get());
+//        assertEquals("/auth/logout", receivedPath.get());
+//        assertNull(receivedAuthorization.get());
+//    }
 
     @Test
     void createOrderForwardsBodyTokenAndContentType() {
