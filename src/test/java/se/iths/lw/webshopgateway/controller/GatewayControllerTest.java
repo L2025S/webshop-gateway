@@ -9,16 +9,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import se.iths.lw.webshopgateway.service.GatewayProxyService;
 
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // The proxy service is replaced by a mock, so these tests only check what the controller
 // reads from the request and what it hands to the proxy service.
@@ -76,7 +69,9 @@ class GatewayControllerTest {
     @Test
     void loginPassesBodyAndContentTypeButNeverTheCookie() throws Exception {
         String loginBody = "{\"username\":\"anna\",\"password\":\"secret\"}";
-        when(gatewayProxyService.login(loginBody, "application/json")).thenReturn(ResponseEntity.ok("{}"));
+
+        when(gatewayProxyService.loginWithCookie("{}", "application/json"))
+                .thenAnswer(invocation -> ResponseEntity.ok("{}"));
 
         mockMvc.perform(post("/gateway/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,21 +79,27 @@ class GatewayControllerTest {
                         .cookie(new Cookie("accessToken", "old-jwt")))
                 .andExpect(status().isOk());
 
-        verify(gatewayProxyService).login(loginBody, "application/json");
+        verify(gatewayProxyService).loginWithCookie(loginBody, "application/json");
     }
 
     @Test
     void returnsTheStatusAndSetCookieHeaderFromTheService() throws Exception {
-        when(gatewayProxyService.login("{}", "application/json"))
-                .thenReturn(ResponseEntity.status(200)
-                        .header("Set-Cookie", "accessToken=abc; Path=/; HttpOnly")
-                        .body("{}"));
+        doReturn(ResponseEntity.status(200)
+                .header("Set-Cookie", "accessToken=abc; Path=/; HttpOnly")
+                .body("{}"))
+                .when(gatewayProxyService)
+                .loginWithCookie("{}", "application/json");
 
         mockMvc.perform(post("/gateway/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Set-Cookie", "accessToken=abc; Path=/; HttpOnly"));
+                .andExpect(header().string(
+                        "Set-Cookie",
+                        "accessToken=abc; Path=/; HttpOnly"
+                ));
+
+        verify(gatewayProxyService).loginWithCookie("{}", "application/json");
     }
 
     @Test
@@ -132,7 +133,7 @@ class GatewayControllerTest {
         verify(gatewayProxyService).createOrder(orderBody, "Bearer my-jwt", "application/json");
     }
 
-    // ===================== ✅ Added: tests for the new routes =====================
+    // ===================== Tests for the newer routes =====================
 
     @Test
     void reduceStockPassesUuidQueryStringAndTokenFromCookie() throws Exception {
