@@ -21,13 +21,15 @@ public class GatewayController {
 
     // =============================== auth controller ==================================
     @PostMapping("/auth/login")
-    public ResponseEntity<String> login(@RequestBody String requestBody, HttpServletRequest request) {
-        return gatewayProxyService.login(requestBody, request.getHeader(HttpHeaders.CONTENT_TYPE));
+    public ResponseEntity<?> login(
+            @RequestBody String requestBody, HttpServletRequest request
+    ) {
+        return gatewayProxyService.loginWithCookie(requestBody, request.getHeader(HttpHeaders.CONTENT_TYPE));
     }
 
 
     @PostMapping("/auth/logout")
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<Void> logout() {
         return gatewayProxyService.logout();
     }
 
@@ -79,10 +81,9 @@ public class GatewayController {
     }
 
     @GetMapping("/categories/all")
-    public ResponseEntity<String> allCategories (HttpServletRequest request) {
+    public ResponseEntity<String> allCategories(HttpServletRequest request) {
         return gatewayProxyService.allCategories(authorizationFrom(request));
     }
-
 
 
     @PostMapping("/products/new")
@@ -115,7 +116,7 @@ public class GatewayController {
 
     @PatchMapping("/products/{uuid}/basic-info")
     public ResponseEntity<String> updateBasicInfo(@PathVariable String uuid, HttpServletRequest request) {
-        return gatewayProxyService.updateBasicInfo(uuid, request.getQueryString(),authorizationFrom(request));
+        return gatewayProxyService.updateBasicInfo(uuid, request.getQueryString(), authorizationFrom(request));
     }
 
     @PatchMapping("/products/{uuid}/image")
@@ -124,7 +125,7 @@ public class GatewayController {
     }
 
     @PatchMapping("/products/{uuid}/category")
-    public ResponseEntity<String> updateCategory(@PathVariable String uuid, HttpServletRequest request ) {
+    public ResponseEntity<String> updateCategory(@PathVariable String uuid, HttpServletRequest request) {
         return gatewayProxyService.updateCategory(uuid, request.getQueryString(), authorizationFrom(request));
     }
 
@@ -138,7 +139,7 @@ public class GatewayController {
 
 
     @PostMapping("/order")
-    public ResponseEntity<String> createOrder(@RequestBody String requestBody, HttpServletRequest request ) {
+    public ResponseEntity<String> createOrder(@RequestBody String requestBody, HttpServletRequest request) {
         return gatewayProxyService.createOrder(
                 requestBody,
                 authorizationFrom(request),
@@ -153,14 +154,14 @@ public class GatewayController {
     }
 
 
-    private String authorizationFrom(HttpServletRequest request){
+    private String authorizationFrom(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorizationHeader != null && !authorizationHeader.isBlank()) {
             return authorizationHeader;
         }
 
         Cookie[] cookies = request.getCookies();
-        if ( cookies == null) {
+        if (cookies == null) {
             return null;
         }
 
@@ -168,7 +169,7 @@ public class GatewayController {
             boolean isAccessTokenCookie = ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName());
             boolean hasValue = cookie.getValue() != null && !cookie.getValue().isBlank();
 
-            if ( isAccessTokenCookie && hasValue) {
+            if (isAccessTokenCookie && hasValue) {
                 return BEARER_PREFIX + cookie.getValue();
             }
         }
